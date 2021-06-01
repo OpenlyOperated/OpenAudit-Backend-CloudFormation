@@ -553,7 +553,7 @@ Resources:
     Properties:
       Handler: index.handler
       Role: !GetAtt ParameterStoreFunctionRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Timeout: 60
       Tags:
         - Key: Name
@@ -747,7 +747,7 @@ Resources:
           };
       Handler: index.handler
       Role: !GetAtt ErrorEmailerFunctionRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Timeout: 10
 
   ErrorEmailerFunctionRole:
@@ -861,7 +861,8 @@ Resources:
                   fi
 
                   echo "\$CURRENT_NODE_VERSION" > /tmp/CURRENT_NODE_VERSION
-                  LATEST_LTS_NODE_VERSION=\$(n --lts)
+                  NEXT_MAJOR_VERSION=13
+                  LATEST_LTS_NODE_VERSION=\$(npm show node@">=\$CURRENT_NODE_VERSION <\$NEXT_MAJOR_VERSION" version)
                   echo "\$LATEST_LTS_NODE_VERSION" > /tmp/LATEST_LTS_NODE_VERSION
                   printf "Current Vs Latest LTS Node Version:\n \$CURRENT_NODE_VERSION vs \$LATEST_LTS_NODE_VERSION \n"
 
@@ -870,7 +871,7 @@ Resources:
                   aws cloudwatch put-metric-data --metric-name "Last Upgrade Check Seconds" --namespace OO/Shared --unit Seconds --value \$SECONDS_SINCE_LAST_UPGRADE_CHECK --dimensions Environment=${Environment},InstanceId=\$INSTANCE_ID
                   aws cloudwatch put-metric-data --metric-name "# Security Packages Upgradable" --namespace OO/Shared --unit Count --value \$NUM_UPGRADABLE_SECURITY_PACKAGES --dimensions Environment=${Environment},InstanceId=\$INSTANCE_ID
                 	aws cloudwatch put-metric-data --metric-name "# Packages Require Restart" --namespace OO/Shared --unit Count --value \$NUM_PACKAGES_REQUIRE_RESTART --dimensions Environment=${Environment},InstanceId=\$INSTANCE_ID
-                  if [ "\$CURRENT_NODE_VERSION" != "\$LATEST_LTS_NODE_VERSION" ];
+                  if [ "\$CURRENT_NODE_VERSION" = "\$LATEST_LTS_NODE_VERSION" ] || [ -z "\$LATEST_LTS_NODE_VERSION" ];
                   then
                   	aws cloudwatch put-metric-data --metric-name "NodeJS Outdated" --namespace OO/Shared --unit Count --value 1 --dimensions Environment=${Environment},InstanceId=\$INSTANCE_ID
                   else
@@ -882,7 +883,7 @@ Resources:
                     aws cloudwatch put-metric-data --metric-name "Last Upgrade Check Seconds" --namespace OO/Shared --unit Seconds --value \$SECONDS_SINCE_LAST_UPGRADE_CHECK --dimensions Environment=${Environment},AutoScalingGroupName=\$AUTOSCALING_GROUP_NAME
                     aws cloudwatch put-metric-data --metric-name "# Security Packages Upgradable" --namespace OO/Shared --unit Count --value \$NUM_UPGRADABLE_SECURITY_PACKAGES --dimensions Environment=${Environment},AutoScalingGroupName=\$AUTOSCALING_GROUP_NAME
                   	aws cloudwatch put-metric-data --metric-name "# Packages Require Restart" --namespace OO/Shared --unit Count --value \$NUM_PACKAGES_REQUIRE_RESTART --dimensions Environment=${Environment},AutoScalingGroupName=\$AUTOSCALING_GROUP_NAME
-                    if [ "\$CURRENT_NODE_VERSION" != "\$LATEST_LTS_NODE_VERSION" ];
+                    if [ "\$CURRENT_NODE_VERSION" = "\$LATEST_LTS_NODE_VERSION" ] || [ -z "\$LATEST_LTS_NODE_VERSION" ];
                     then
                     	aws cloudwatch put-metric-data --metric-name "NodeJS Outdated" --namespace OO/Shared --unit Count --value 1 --dimensions Environment=${Environment},AutoScalingGroupName=\$AUTOSCALING_GROUP_NAME
                     else

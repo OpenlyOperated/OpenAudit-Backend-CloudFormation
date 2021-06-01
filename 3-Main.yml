@@ -37,35 +37,35 @@ Mappings:
 
   RegionMap:
     us-east-1:
-      AMI: ami-0735ea082a1534cac
+      AMI: ami-0747bdcabd34c712a
     us-east-2:
-      AMI: ami-04c305e118636bc7d
+      AMI: ami-0b9064170e32bde34
     us-west-1:
-      AMI: ami-0f5113ce7686689e9
+      AMI: ami-07b068f843ec78e72
     us-west-2:
-      AMI: ami-01e0cf6e025c036e4
+      AMI: ami-090717c950a5c34d3
     ap-south-1:
-      AMI: ami-0c6c52d7cf1004825
+      AMI: ami-04bde106886a53080
     ap-northeast-2:
-      AMI: ami-0035936492be04cff
+      AMI: ami-0ba5cd124d7a79612
     ap-southeast-1:
-      AMI: ami-0d97809b54a5f01ba
+      AMI: ami-055147723b7bca09a
     ap-southeast-2:
-      AMI: ami-05162512c82cb460f
+      AMI: ami-0f39d06d145e9bb63
     ap-northeast-1:
-      AMI: ami-06317ca3b39714f7e
+      AMI: ami-0fe22bffdec36361c
     ca-central-1:
-      AMI: ami-0a5443ed7b0a45901
+      AMI: ami-0e28822503eeedddc
     eu-central-1:
-      AMI: ami-0dd0be70cc0d493b7
+      AMI: ami-0b1deee75235aa4bb
     eu-west-1:
-      AMI: ami-00b36349b3dba2ec3
+      AMI: ami-0943382e114f188e8
     eu-west-2:
-      AMI: ami-06f77073d7dc4c48a
+      AMI: ami-09a56048b08f94cdf
     eu-west-3:
-      AMI: ami-0b26151106502588d
+      AMI: ami-06602da18c878f98d
     sa-east-1:
-      AMI: ami-0f7c76bfc85e5b4ea
+      AMI: ami-05aa753c043f1dcd3
 
 Resources:
 
@@ -499,15 +499,15 @@ Resources:
         "Fn::Base64":
           !Sub |
             #!/bin/bash -ex
-            # Install Updates and Python SetupTools (for easy_install)
+            # Install Updates and Python3
             export DEBIAN_FRONTEND=noninteractive
             apt-get update && apt-get dist-upgrade -yq
-            apt-get -yq install python-setuptools
+            apt-get -yq install python3.7-distutils python3-pip python3 python3-setuptools
             # Install CloudFormation Bootstrap
-            easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
-            ln -s /usr/local/lib/python2.7/dist-packages/aws_cfn_bootstrap-1.4-py2.7.egg/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
-            chmod +x /usr/local/lib/python2.7/dist-packages/aws_cfn_bootstrap-1.4-py2.7.egg/init/ubuntu/cfn-hup
-            update-rc.d cfn-hup defaults
+            wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+            tar -xvzf aws-cfn-bootstrap-py3-latest.tar.gz
+            cd aws-cfn-bootstrap-2.0
+            python3 setup.py install
             # Run CloudFormation In
             cfn-init -c default --stack ${AWS::StackName} --resource MainLaunchConfiguration --region ${AWS::Region}
             # Signal success to CloudFormation on reboot
@@ -525,7 +525,6 @@ Resources:
             - "install-pip-and-curl-and-ruby"
             - "set-region-and-environment"
             - "install-aws-cloudwatch-and-cli"
-            - "setup-cfn-hup"
             - "install-node"
             - "forward-node-port-on-reboot"
             - "install-pm2"
@@ -648,11 +647,6 @@ Resources:
                             "log_stream_name": "{instance_id}-cfn-init-cmd"
                           },
                           {
-                            "file_path": "/var/log/cfn-hup.log",
-                            "log_group_name": "${Environment}-Main",
-                            "log_stream_name": "{instance_id}-cfn-hup"
-                          },
-                          {
                             "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
                             "log_group_name": "${Environment}-Main",
                             "log_stream_name": "{instance_id}-aws-ssm"
@@ -759,35 +753,6 @@ Resources:
                 cd /home/ubuntu/cloudwatch_agent
                 ./install.sh
                 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ubuntu/cloudwatch.config -s
-        setup-cfn-hup:
-           files:
-             '/etc/cfn/cfn-hup.conf':
-               content: !Sub |
-                 [main]
-                 stack=${AWS::StackId}
-                 region=${AWS::Region}
-                 interval=1
-               mode: '000400'
-               owner: root
-               group: root
-             '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
-               content: !Sub |
-                 [cfn-auto-reloader-hook]
-                 triggers=post.update
-                 path=Resources.MainLaunchConfiguration.Metadata.AWS::CloudFormation::Init
-                 action=cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MainLaunchConfiguration --configsets updateable
-                 runas=root
-               mode: '000400'
-               owner: root
-               group: root
-           services:
-             sysvinit:
-               cfn-hup:
-                 enabled: true
-                 ensureRunning: true
-                 files:
-                 - '/etc/cfn/cfn-hup.conf'
-                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
         install-node:
           commands:
             0_create_user:
@@ -801,7 +766,7 @@ Resources:
                         --home /home/node \
                         node
             1_setup:
-              command: curl -sL https://deb.nodesource.com/setup_10.x | bash -
+              command: curl -sL https://deb.nodesource.com/setup_12.x | bash -
             2_install:
               command: apt-get install -yq nodejs
             3_update_npm:
