@@ -1600,7 +1600,7 @@ Resources:
       - DatabaseSubnetGroup
       - DatabaseSecurityGroup
     Properties:
-      AllocatedStorage: 20
+      AllocatedStorage: 40
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 30
@@ -1795,9 +1795,9 @@ Resources:
         - Fn::Select:
             - 0
             - Fn::GetAZs: ""
-        - Fn::Select:
-            - 1
-            - Fn::GetAZs: ""
+        # - Fn::Select:
+        #     - 1
+        #     - Fn::GetAZs: ""
       ReplicationGroupDescription: RedisReplicationGroup
       SecurityGroupIds:
         - !Ref RedisSecurityGroup
