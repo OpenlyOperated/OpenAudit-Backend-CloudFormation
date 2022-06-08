@@ -29,6 +29,10 @@ Parameters:
   RedisNumCacheClusters:
     Type: Number
     Default: 2 # 1 for Test environment - 2 for prod
+    
+  RedisInstanceClass:
+    Type: String
+    Default: cache.m4.large # cache.t2.micro for Test environment
 
 Conditions:
 
@@ -1609,7 +1613,7 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       EnablePerformanceInsights: !Ref DatabasePerformanceInsights
       Engine: postgres
-      EngineVersion: 10.9
+      EngineVersion: 10.18
       LicenseModel: postgresql-license
       MasterUsername: master
       MasterUserPassword: !GetAtt DatabaseAdminPasswordParameter.Value
@@ -1784,7 +1788,7 @@ Resources:
       AuthToken: !GetAtt RedisPasswordParameter.Value
       AutomaticFailoverEnabled: !Ref RedisAutomaticFailoverEnabled
       AutoMinorVersionUpgrade: true
-      CacheNodeType: cache.m4.large
+      CacheNodeType: !Ref RedisInstanceClass
       CacheParameterGroupName: default.redis4.0
       CacheSubnetGroupName: !Ref RedisSubnetGroup
       Engine: redis
